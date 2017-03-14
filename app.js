@@ -1,7 +1,24 @@
 var restify = require('restify');
 var builder = require('botbuilder');
+var fs = require('fs');
+var https = require('https');
 
-var server = restify.createServer();
+var serverOptions = null;
+
+if (process.env.HTTPS_CERT_KEY_PATH && process.env.HTTPS_CERT_PATH && process.env.HTTPS_CA_PATH) {
+    console.log("Found certificate env vars. Launching server as https");
+
+    serverOptions = {
+        key: fs.readFileSync(process.env.HTTPS_CERT_KEY_PATH),
+        cert: fs.readFileSync(process.env.HTTPS_CERT_PATH),
+        ca: fs.readFileSync(process.env.HTTPS_CA_PATH)
+    };
+} else {
+    console.log("Certificate env vars not found. Launching server as http");
+}
+
+var server = restify.createServer(serverOptions);
+
 server.listen(process.env.port || process.env.PORT || 3978, function () {
     console.log("%s listening to %s", server.name, server.url);
 });
