@@ -30,8 +30,32 @@ var connector = new builder.ChatConnector({
 
 var bot = new builder.UniversalBot(connector);
 
+var luisModel = "https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/c413b2ef-382c-45bd-8ff0-f76d60e2a821?subscription-key=02e794f8fba148ad96868c4bd8a95fe1&q=";
+var recognizer = new builder.LuisRecognizer(luisModel);
+var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
+
 server.post("/api/messages", connector.listen());
 
-bot.dialog('/', function (session) {
-    session.send("Hello World!");
-})
+bot.dialog('/', dialog);
+
+dialog.matches("builtin.intent.weather.check_weather", [
+    function (session, args, next) {
+        var location = builder.EntityRecognizer.findEntity(args.entities, "builtin.weather.absolute_location");
+
+        if (!location) {
+            builder.Prompts.text(session, "For which area would you like me to check the weather?");
+        } else {
+            session.dialogData.location = location.entity;
+            next();
+        }
+    },
+    function (session, results) {
+        var location = session.dialogData.location;
+
+        if (results.response) {
+            location = results.response;
+        }
+
+        session.send("Okay! I am going to check the weather in %s!", location);
+    }
+]);
