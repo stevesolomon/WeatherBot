@@ -38,7 +38,7 @@ server.post("/api/messages", connector.listen());
 
 bot.dialog('/', dialog);
 
-dialog.matches("builtin.intent.weather.check_weather", [
+bot.dialog('/checkWeather', [
     function (session, args, next) {
         var location = builder.EntityRecognizer.findEntity(args.entities, "builtin.weather.absolute_location");
 
@@ -57,5 +57,24 @@ dialog.matches("builtin.intent.weather.check_weather", [
         }
 
         session.send("Okay! I am going to check the weather in %s!", location);
+    }
+]);
+
+dialog.matches("builtin.intent.weather.check_weather", function (session, args) {
+    session.beginDialog("/checkWeather", args)
+});
+
+dialog.onDefault([
+    function (session, args, next) {
+        session.send("Sorry, I didn't understand that.");
+        session.send("I'm only really good for checking the weather.");
+        builder.Prompts.confirm(session, "Would you like me to check the weather for you?");
+    },
+    function (session, results, next) {
+        if (results.response === true) {
+            session.beginDialog("/checkWeather", args = {});
+        } else if (results.response === false) {
+            session.endConversation("Okay. I won't bother you further. Goodbye!");
+        }
     }
 ]);
