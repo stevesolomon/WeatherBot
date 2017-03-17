@@ -3,6 +3,15 @@ var builder = require('botbuilder');
 var fs = require('fs');
 var https = require('https');
 
+var WeatherHelper = require('./utils/weatherHelper.js');
+
+var wundergroundApiKey; 
+var luisCortanaUriPart;
+
+loadKeys();
+
+var weatherHelper = new WeatherHelper(wundergroundApiKey);
+
 var serverOptions = null;
 
 if (process.env.HTTPS_CERT_KEY_PATH && process.env.HTTPS_CERT_PATH && process.env.HTTPS_CA_PATH) {
@@ -30,7 +39,7 @@ var connector = new builder.ChatConnector({
 
 var bot = new builder.UniversalBot(connector);
 
-var luisModel = "https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/c413b2ef-382c-45bd-8ff0-f76d60e2a821?subscription-key=02e794f8fba148ad96868c4bd8a95fe1&q=";
+var luisModel = "https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/" + luisCortanaUriPart;
 var recognizer = new builder.LuisRecognizer(luisModel);
 var dialog = new builder.IntentDialog({ recognizers: [recognizer] });
 
@@ -78,3 +87,16 @@ dialog.onDefault([
         }
     }
 ]);
+
+function loadKeys() {
+    wundergroundApiKey = process.env.WEATHER_UNDERGROUND_API_KEY;
+    luisCortanaUriPart = process.env.LUIS_CORTANA_URI_PART;
+
+    if (!wundergroundApiKey) {
+        console.error("The WEATHER_UNDERGROUND_API_KEY env var was not set. Weather information cannot be retrieved");
+    }
+
+    if (!luisCortanaUriPart) {
+        console.error("The LUIS_CORTANA_URI_PART env var was not set. Service will be unable to make requests against the LUIS Cortana Model.");
+    }
+}
