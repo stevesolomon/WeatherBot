@@ -66,6 +66,8 @@ bot.dialog('/checkWeather', [
         }
 
         session.send("Okay! I am going to check the weather in %s!", location);
+        let currConditions = weatherHelper.getCurrentConditions();
+        session.send("The current temperature is: " + currConditions);
     }
 ]);
 
