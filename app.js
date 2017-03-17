@@ -58,7 +58,7 @@ bot.dialog('/checkWeather', [
             next();
         }
     },
-    function (session, results) {
+    function (session, results, next) {
         var location = session.dialogData.location;
 
         if (results.response) {
@@ -66,12 +66,23 @@ bot.dialog('/checkWeather', [
         }
 
         session.send("Okay! I am going to check the weather in %s!", location);
-        let currConditions = weatherHelper.getCurrentConditions();
-        session.send("The current temperature is: " + currConditions);
+
+        weatherHelper.getCurrentConditions(location).then(function (conditions) {
+            session.dialogData.temperature = conditions;
+            next();
+        });        
+    },
+    function (session, results) {
+        session.send("The current temperature is: " + session.dialogData.temperature);
+        session.endDialog();
     }
 ]);
 
 dialog.matches("builtin.intent.weather.check_weather", function (session, args) {
+    if (!args) {
+        args = {};
+    }
+
     session.beginDialog("/checkWeather", args)
 });
 
@@ -86,6 +97,7 @@ dialog.onDefault([
             session.beginDialog("/checkWeather", args = {});
         } else if (results.response === false) {
             session.endConversation("Okay. I won't bother you further. Goodbye!");
+            session.endDialog();
         }
     }
 ]);
