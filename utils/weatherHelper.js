@@ -24,7 +24,16 @@ module.exports = class WeatherHelper {
                 return response.data.current_observation.temp_c;
             })
             .catch(function (error) {
-                console.error(error);
+                if (error.response) {
+                    console.error("Request to wunderground failed with status code %s", error.response.status);
+                    console.error(error.response.data);
+                } else {
+                    console.error(error);
+                }
+
+                console.error(error.config);
+                
+                return Promise.reject(error);
             });
     }
 }

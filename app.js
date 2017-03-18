@@ -67,14 +67,18 @@ bot.dialog('/checkWeather', [
 
         session.send("Okay! I am going to check the weather in %s!", location);
 
-        weatherHelper.getCurrentConditions(location).then(function (conditions) {
-            session.dialogData.temperature = conditions;
-            next();
-        });        
+        weatherHelper.getCurrentConditions(location)
+            .then(function (conditions) {
+                session.dialogData.temperature = conditions;
+                next();
+            })
+            .catch(function (error) {
+                session.endConversation("Hmmm, I seem to have been unable to check the weather right now. You may have to try again later. Sorry about that!");
+            })
     },
     function (session, results) {
         session.send("The current temperature is: " + session.dialogData.temperature);
-        session.endDialog();
+        session.endConversation("Feel free to ask me about the weather whenever you like!");
     }
 ]);
 
@@ -97,7 +101,6 @@ dialog.onDefault([
             session.beginDialog("/checkWeather", args = {});
         } else if (results.response === false) {
             session.endConversation("Okay. I won't bother you further. Goodbye!");
-            session.endDialog();
         }
     }
 ]);
