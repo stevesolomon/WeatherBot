@@ -20,6 +20,13 @@ module.exports = class WeatherHelper {
 
         return axios.get(url)
             .then(function (response) {
+
+                if (response.data.response.error) {
+                    console.error("Received an error during the request: ");
+                    //console.error(response.data.response.error);
+                    return Promise.reject(response.data.response.error);
+                }
+
                 console.log(response.data.current_observation.temp_c);
                 return response.data.current_observation.temp_c;
             })
