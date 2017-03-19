@@ -63,13 +63,14 @@ bot.dialog('/checkWeather', [
 
         if (results.response) {
             location = results.response;
+            session.dialogData.location = location;
         }
 
         session.send("Okay! I am going to check the weather in %s!", location);
 
         weatherHelper.getCurrentConditions(location)
-            .then(function (conditions) {
-                session.dialogData.temperature = conditions;
+            .then(function (weatherData) {
+                session.dialogData.weatherData = weatherData;
                 next();
             })
             .catch(function (error) {
@@ -77,7 +78,15 @@ bot.dialog('/checkWeather', [
             })
     },
     function (session, results) {
-        session.send("The current temperature is: " + session.dialogData.temperature);
+        var weatherData = session.dialogData.weatherData;
+        var temp = weatherData.tempc;
+        var scale = "C";
+
+        session.send("Right now it is %s in %s with a temperature of %s%s",
+            weatherData.weather,
+            session.dialogData.location,
+            temp,
+            scale);
         session.endConversation("Feel free to ask me about the weather whenever you like!");
     }
 ]);

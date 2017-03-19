@@ -23,12 +23,17 @@ module.exports = class WeatherHelper {
 
                 if (response.data.response.error) {
                     console.error("Received an error during the request: ");
-                    //console.error(response.data.response.error);
+                    console.error(response.data.response.error);
                     return Promise.reject(response.data.response.error);
                 }
 
                 console.log(response.data.current_observation.temp_c);
-                return response.data.current_observation.temp_c;
+                return {
+                    'tempc': response.data.current_observation.temp_c,
+                    'tempf': response.data.current_observation.temp_f,
+                    'weather': response.data.current_observation.weather
+
+                };
             })
             .catch(function (error) {
                 if (error.response) {
