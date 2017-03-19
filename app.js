@@ -74,7 +74,8 @@ bot.dialog('/checkWeather', [
                 next();
             })
             .catch(function (error) {
-                session.endConversation("Hmmm, I seem to have been unable to check the weather right now. You may have to try again later. Sorry about that!");
+                handleErrorInWeatherSearch(session, error);
+                session.endConversation();
             })
     },
     function (session, results) {
@@ -124,5 +125,13 @@ function loadKeys() {
 
     if (!luisCortanaUriPart) {
         console.error("The LUIS_CORTANA_URI_PART env var was not set. Service will be unable to make requests against the LUIS Cortana Model.");
+    }
+}
+
+function handleErrorInWeatherSearch(session, error) {
+    if (error.type === 'querynotfound') {
+        session.send("I wasn't able to find a location matching %s. Try asking me again with more detail.", session.dialogData.location);
+    } else {
+        session.send("Hmmm, I seem to have been unable to check the weather right now. You may have to try again later. Sorry about that!");
     }
 }
