@@ -71,6 +71,14 @@ bot.dialog('/checkWeather', [
         weatherHelper.getCurrentConditions(location)
             .then(function (weatherData) {
                 session.dialogData.weatherData = weatherData;
+
+                if (weatherData.multiple_locations) {
+                    builder.Prompts.choice(
+                        session,
+                        "I found multiple locations based on what you told me. Please pick one.",
+                        formatMultipleLocations(weatherData.multiple_locations));
+                }
+
                 next();
             })
             .catch(function (error) {
@@ -134,4 +142,14 @@ function handleErrorInWeatherSearch(session, error) {
     } else {
         session.send("Hmmm, I seem to have been unable to check the weather right now. You may have to try again later. Sorry about that!");
     }
+}
+
+function formatMultipleLocations(locations) {
+    let formatted = [];
+
+    locations.forEach(function (location) {
+        formatted.push(location.city + ", " + location.state + ", " + location.country);
+    });
+
+    return formatted;
 }

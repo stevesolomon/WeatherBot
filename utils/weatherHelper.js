@@ -27,12 +27,25 @@ module.exports = class WeatherHelper {
                     return Promise.reject(response.data.response.error);
                 }
 
-                console.log(response.data.current_observation.temp_c);
+                // We may get a response back indicating multiple locations found for our query.
+                // If that is the case, return all the locations - the client can re-query based on
+                // the locations provided back.
+                if (response.data.response && response.data.response.results.length > 1) {
+                    let returnData = [];
+
+                    response.data.response.results.forEach(function (result) {
+                        returnData.push({ "city": result.city, "state": result.state, "country": result.country_name });
+                    });
+
+                    return {
+                        "multiple_locations": returnData
+                    };
+                }
+
                 return {
                     'tempc': response.data.current_observation.temp_c,
                     'tempf': response.data.current_observation.temp_f,
                     'weather': response.data.current_observation.weather
-
                 };
             })
             .catch(function (error) {
