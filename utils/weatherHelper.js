@@ -30,7 +30,7 @@ module.exports = class WeatherHelper {
                 // We may get a response back indicating multiple locations found for our query.
                 // If that is the case, return all the locations - the client can re-query based on
                 // the locations provided back.
-                if (response.data.response && response.data.response.results.length > 1) {
+                if (response.data.response && response.data.response.results && response.data.response.results.length > 1) {
                     let returnData = [];
 
                     response.data.response.results.forEach(function (result) {
