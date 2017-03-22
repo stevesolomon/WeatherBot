@@ -54,9 +54,8 @@ bot.dialog('checkWeather', [
             session.beginDialog("getLocation");
         } else {
             session.privateConversationData.location = location.entity;
-        }
-
-        next();
+            next();
+        }        
     },
     function (session, results, next) {
         var location = session.privateConversationData.location;
