@@ -60,19 +60,40 @@ bot.dialog('checkWeather', [
     function (session, results, next) {
         var location = session.privateConversationData.location;
 
+        weatherHelper.lookupLocation(location)
+            .then(function (locationData) {
+
+                session.dialogData.locationData = locationData;
+
+                if (locationData.length > 1) {
+                    session.dialogData.promptedToPickLocation = true;
+                    builder.Prompts.choice(
+                        session,
+                        'I found multiple locations based on what you told me. Please pick one:',
+                        formatMultipleLocations(locationData));
+                } else {
+                    session.privateConversationData.location = formatLocation(locationData[0]);
+                    next();
+                }                
+            })
+            .catch(function (error) {
+                handleErrorInWeatherSearch(session, error);
+                session.endConversation();
+            });               
+    },
+    function (session, results, next) {
+
+        if (session.dialogData.promptedToPickLocation) {
+            session.privateConversationData.location = results.response.entity;
+        }
+
+        location = session.privateConversationData.location;
+
         session.send("Okay! I am going to check the weather in %s!", location);
 
         weatherHelper.getCurrentConditions(location)
             .then(function (weatherData) {
                 session.dialogData.weatherData = weatherData;
-
-                if (weatherData.multiple_locations) {
-                    builder.Prompts.choice(
-                        session,
-                        'I found multiple locations based on what you told me. Please pick one.',
-                        formatMultipleLocations(weatherData.multiple_locations));
-                }
-
                 next();
             })
             .catch(function (error) {
@@ -134,8 +155,12 @@ function formatMultipleLocations(locations) {
     let formatted = [];
 
     locations.forEach(function (location) {
-        formatted.push(location.city + ", " + location.state + ", " + location.country);
+        formatted.push(formatLocation(location));
     });
 
     return formatted;
+}
+
+function formatLocation(location) {
+    return location.city + ", " + location.state + ", " + location.country;
 }
