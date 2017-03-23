@@ -65,14 +65,14 @@ bot.dialog('checkWeather', [
 
                 session.dialogData.locationData = locationData;
 
-                if (locationData.length > 1) {
+                if (Object.keys(locationData).length > 1) {
                     session.dialogData.promptedToPickLocation = true;
                     builder.Prompts.choice(
                         session,
                         'I found multiple locations based on what you told me. Please pick one:',
-                        formatMultipleLocations(locationData));
+                        locationData);
                 } else {
-                    session.privateConversationData.location = formatLocation(locationData[0]);
+                    session.privateConversationData.location = Object.keys(locationData)[0];
                     next();
                 }                
             })
@@ -88,10 +88,11 @@ bot.dialog('checkWeather', [
         }
 
         location = session.privateConversationData.location;
+        let locationData = session.dialogData.locationData[location];
 
         session.send("Okay! I am going to check the weather in %s!", location);
 
-        weatherHelper.getCurrentConditions(location)
+        weatherHelper.getCurrentConditions(locationData.zmw)
             .then(function (weatherData) {
                 session.dialogData.weatherData = weatherData;
                 next();
@@ -108,7 +109,7 @@ bot.dialog('checkWeather', [
 
         session.send('Right now it is %s in %s with a temperature of %s%s',
             weatherData.weather,
-            session.dialogData.location,
+            session.privateConversationData.location,
             temp,
             scale);
         session.endConversation('Feel free to ask me about the weather whenever you like!');

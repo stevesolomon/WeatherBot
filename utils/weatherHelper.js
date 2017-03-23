@@ -13,6 +13,18 @@ module.exports = class WeatherHelper {
     }
 
     lookupLocation(location) {
+        function createLocationStructureFromResponseLocation(location) {
+            let keyName = location.city + ', ' + location.state + ', ' + location.country_name;
+
+            return {
+                'city': location.city,
+                'state': location.state,
+                'country': location.country_name,
+                'zmw': location.l.substring(3),
+                'keyName': keyName
+            };
+        };
+
         let url = baseUri + this.apiKey + geoUri + location + fileType;
 
         console.log("Making request to wunderground: %s", url);
@@ -26,13 +38,15 @@ module.exports = class WeatherHelper {
                     return Promise.reject(response.data.response.error);
                 }
 
-                let returnData = [];
+                let returnData = {};
 
                 if (response.data.location) {
-                    returnData.push({ "city": response.data.location.city, "state": response.data.location.state, "country": response.data.location.country_name });
+                    var structuredData = createLocationStructureFromResponseLocation(response.data.location);
+                    returnData[structuredData.keyName] = structuredData;
                 } else if (response.data.response && response.data.response.results) {
                     response.data.response.results.forEach(function (result) {
-                        returnData.push({ "city": result.city, "state": result.state, "country": result.country_name });
+                        var structuredData = createLocationStructureFromResponseLocation(result);
+                        returnData[structuredData.keyName] = structuredData;
                     });
                 }
 
@@ -74,5 +88,5 @@ module.exports = class WeatherHelper {
                 
                 return Promise.reject(error);
             });
-    }
+    }    
 }
