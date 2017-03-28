@@ -168,6 +168,7 @@ function createWeatherCard(session) {
         .title('Weather for ' + weatherData.location)
         .subtitle(weatherData.observationTime)
         .text(buildCurrentWeatherString(weatherData))
+        .buttons([builder.CardAction.openUrl(session, weatherData.observationUrl)])
         .images([builder.CardImage.create(session, weatherData.weatherImageUrl)]);
 }
 

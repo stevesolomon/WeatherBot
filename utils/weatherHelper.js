@@ -76,7 +76,8 @@ module.exports = class WeatherHelper {
                     'tempf': response.data.current_observation.temp_f,
                     'weather': response.data.current_observation.weather,
                     'weatherImageUrl': response.data.current_observation.icon_url,
-                    'observationTime': response.data.current_observation.observation_time
+                    'observationTime': response.data.current_observation.observation_time,
+                    'observationUrl' : response.data.current_observation.ob_url
                 };
             })
             .catch(function (error) {
