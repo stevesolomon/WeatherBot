@@ -103,15 +103,10 @@ bot.dialog('checkWeather', [
             })
     },
     function (session, results) {
-        var weatherData = session.dialogData.weatherData;
-        var temp = weatherData.tempc;
-        var scale = 'C';
+        var card = createWeatherCard(session);
+        var message = new builder.Message(session).addAttachment(card);
 
-        session.send('Right now it is %s in %s with a temperature of %s%s',
-            weatherData.weather,
-            session.privateConversationData.location,
-            temp,
-            scale);
+        session.send(message);
         session.endConversation('Feel free to ask me about the weather whenever you like!');
     }
 ])
@@ -164,4 +159,29 @@ function formatMultipleLocations(locations) {
 
 function formatLocation(location) {
     return location.city + ", " + location.state + ", " + location.country;
+}
+
+function createWeatherCard(session) {
+    let weatherData = session.dialogData.weatherData;
+
+    return new builder.ThumbnailCard(session)
+        .title('Weather for ' + weatherData.location)
+        .subtitle(weatherData.observationTime)
+        .text(buildCurrentWeatherString(weatherData))
+        .images([builder.CardImage.create(session, weatherData.weatherImageUrl)]);
+}
+
+function buildCurrentWeatherString(weatherData) {
+    let weatherString = 'Right now ';
+
+    if (weatherData.weather.endsWith('s')) {
+        weatherString += 'there are ';
+    } else {
+        weatherString += 'it is ';
+    }
+
+    weatherString += weatherData.weather + ' with a temperature of ';
+    weatherString += weatherData.tempc + 'C';
+
+    return weatherString;
 }
