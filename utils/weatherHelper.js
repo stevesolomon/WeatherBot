@@ -71,9 +71,12 @@ module.exports = class WeatherHelper {
                 }
 
                 return {
+                    'location': response.data.current_observation.display_location.full,
                     'tempc': response.data.current_observation.temp_c,
                     'tempf': response.data.current_observation.temp_f,
-                    'weather': response.data.current_observation.weather
+                    'weather': response.data.current_observation.weather,
+                    'weatherImageUrl': response.data.current_observation.icon_url,
+                    'observationTime': response.data.current_observation.observation_time
                 };
             })
             .catch(function (error) {
