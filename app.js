@@ -5,6 +5,9 @@ var https = require('https');
 
 var WeatherHelper = require('./utils/weatherHelper.js');
 
+let CELSIUS = "celsius";
+let FAHRENHEIT = "fahrenheit";
+
 var wundergroundApiKey; 
 var luisCortanaUriPart;
 
@@ -48,7 +51,15 @@ server.post("/api/messages", connector.listen());
 
 bot.dialog('checkWeather', [
     function (session, args, next) {
-        var location = builder.EntityRecognizer.findEntity(args.intent.entities, "builtin.weather.absolute_location");
+        var location = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.weather.absolute_location');
+        var tempUnit = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.weather.temperature_unit');
+
+        if (!tempUnit) {
+            // Default to C for now, we'll do something smarter later.
+            session.privateConversationData.temperatureUnit = 'celsius';
+        } else {
+            session.privateConversationData.temperatureUnit = tempUnit.resolution.value;
+        }
 
         if (!location) {
             session.beginDialog("getLocation");
@@ -167,12 +178,12 @@ function createWeatherCard(session) {
     return new builder.ThumbnailCard(session)
         .title('Weather for ' + weatherData.location)
         .subtitle(weatherData.observationTime)
-        .text(buildCurrentWeatherString(weatherData))
+        .text(buildCurrentWeatherString(weatherData, session.privateConversationData.temperatureUnit))
         .buttons([builder.CardAction.openUrl(session, weatherData.observationUrl)])
         .images([builder.CardImage.create(session, weatherData.weatherImageUrl)]);
 }
 
-function buildCurrentWeatherString(weatherData) {
+function buildCurrentWeatherString(weatherData, tempUnit) {
     let weatherString = 'Right now ';
 
     if (weatherData.weather.endsWith('s')) {
@@ -181,8 +192,16 @@ function buildCurrentWeatherString(weatherData) {
         weatherString += 'it is ';
     }
 
+    let temp = weatherData.tempc;
+    let tempString = 'C';
+
+    if (tempUnit === FAHRENHEIT) {
+        temp = weatherData.tempf;
+        tempString = 'F';
+    }
+
     weatherString += weatherData.weather + ' with a temperature of ';
-    weatherString += weatherData.tempc + 'C';
+    weatherString += temp + tempString;
 
     return weatherString;
 }
