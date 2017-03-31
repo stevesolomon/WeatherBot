@@ -5,6 +5,7 @@ var axios = require('axios');
 let baseUri = 'http://api.wunderground.com/api/';
 let conditionsUri = '/conditions/q/';
 let geoUri = '/geolookup/q/';
+let autoIP = "autoIp";
 let fileType = '.json';
 
 module.exports = class WeatherHelper {
@@ -12,18 +13,29 @@ module.exports = class WeatherHelper {
         this.apiKey = apiKey;
     }
 
-    lookupLocation(location) {
-        function createLocationStructureFromResponseLocation(location) {
-            let keyName = location.city + ', ' + location.state + ', ' + location.country_name;
+    lookupLocationFromIP() {
+        let url = baseUri + this.apiKey + geoUri + autoIP + fileType;
 
-            return {
-                'city': location.city,
-                'state': location.state,
-                'country': location.country_name,
-                'zmw': location.l.substring(3),
-                'keyName': keyName
-            };
-        };
+        console.log("Making request to wunderground: %s", url);
+
+        return axios.get(url)
+            .then(function (response) {
+
+                if (response.data.response.error) {
+                    console.error("Received an error during the request:");
+                    console.error(response.data.response.error);
+                    return Promise.reject(response.data.response.error);
+                }
+
+                let returnData = {};
+                var structuredData = createLocationStructureFromResponseLocation(response.data.location);
+                returnData[structuredData.keyName] = structuredData;
+
+                return returnData;
+        });
+    }
+
+    lookupLocation(location) {       
 
         let url = baseUri + this.apiKey + geoUri + location + fileType;
 
@@ -92,5 +104,17 @@ module.exports = class WeatherHelper {
                 
                 return Promise.reject(error);
             });
-    }    
+    }     
 }
+
+function createLocationStructureFromResponseLocation(location) {
+    let keyName = location.city + ', ' + location.state + ', ' + location.country_name;
+
+    return {
+        'city': location.city,
+        'state': location.state,
+        'country': location.country_name,
+        'zmw': location.l.substring(3),
+        'keyName': keyName
+    };
+};
