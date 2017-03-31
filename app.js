@@ -62,35 +62,57 @@ bot.dialog('checkWeather', [
         }
 
         if (!location) {
-            session.beginDialog("getLocation");
-        } else {
-            session.privateConversationData.location = location.entity;
-            next();
-        }        
-    },
-    function (session, results, next) {
-        var location = session.privateConversationData.location;
 
-        weatherHelper.lookupLocation(location)
-            .then(function (locationData) {
+            let locationData = {};
 
-                session.dialogData.locationData = locationData;
-
-                if (Object.keys(locationData).length > 1) {
-                    session.dialogData.promptedToPickLocation = true;
-                    builder.Prompts.choice(
-                        session,
-                        'I found multiple locations based on what you told me. Please pick one:',
-                        locationData);
-                } else {
+            weatherHelper.lookupLocationFromIP()
+                .then(function (locationData) {
+                    session.privateConversationData.locationData = locationData;
                     session.privateConversationData.location = Object.keys(locationData)[0];
                     next();
-                }                
-            })
-            .catch(function (error) {
-                handleErrorInWeatherSearch(session, error);
-                session.endConversation();
-            });               
+                })
+                .catch(function(error) {
+                    handleErrorInWeatherSearch(session, error);
+                    session.endConversation();
+                });
+            
+        } else {
+            session.privateConversationData.location = location.entity;   
+            next();
+        }           
+    },
+    function (session, results, next) {
+        var locationData = session.privateConversationData.locationData;
+
+        console.log(locationData);
+
+        if (!locationData) {
+
+            let location = session.privateConversationData.location;
+
+            weatherHelper.lookupLocation(location)
+                .then(function (locationData) {
+
+                    session.privateConversationData.locationData = locationData;
+
+                    if (Object.keys(locationData).length > 1) {
+                        session.dialogData.promptedToPickLocation = true;
+                        builder.Prompts.choice(
+                            session,
+                            'I found multiple locations based on what you told me. Please pick one:',
+                            locationData);
+                    } else {
+                        session.privateConversationData.location = Object.keys(locationData)[0];
+                        next();
+                    }
+                })
+                .catch(function (error) {
+                    handleErrorInWeatherSearch(session, error);
+                    session.endConversation();
+                });
+        } else {
+            next();
+        }
     },
     function (session, results, next) {
 
@@ -99,7 +121,7 @@ bot.dialog('checkWeather', [
         }
 
         location = session.privateConversationData.location;
-        let locationData = session.dialogData.locationData[location];
+        let locationData = session.privateConversationData.locationData[location];
 
         session.send("Okay! I am going to check the weather in %s!", location);
 
