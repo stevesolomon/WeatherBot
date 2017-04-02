@@ -62,20 +62,7 @@ bot.dialog('checkWeather', [
         }
 
         if (!location) {
-
-            let locationData = {};
-
-            weatherHelper.lookupLocationFromIP()
-                .then(function (locationData) {
-                    session.privateConversationData.locationData = locationData;
-                    session.privateConversationData.location = Object.keys(locationData)[0];
-                    next();
-                })
-                .catch(function(error) {
-                    handleErrorInWeatherSearch(session, error);
-                    session.endConversation();
-                });
-            
+            session.beginDialog('getLocation');            
         } else {
             session.privateConversationData.location = location.entity;   
             next();
