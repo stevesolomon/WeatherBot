@@ -13,8 +13,8 @@ module.exports = class WeatherHelper {
         this.apiKey = apiKey;
     }
 
-    lookupLocationFromIP() {
-        let url = baseUri + this.apiKey + geoUri + autoIP + fileType;
+    lookupLocationFromIP(ipAddress) {
+        let url = baseUri + this.apiKey + geoUri + autoIP + fileType + "?geo_ip=" + ipAddress;
 
         console.log("Making request to wunderground: %s", url);
 
