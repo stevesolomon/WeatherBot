@@ -2,6 +2,7 @@ var restify = require('restify');
 var builder = require('botbuilder');
 var fs = require('fs');
 var https = require('https');
+var moment = require('moment');
 
 var WeatherHelper = require('./utils/weatherHelper.js');
 
@@ -53,6 +54,7 @@ bot.dialog('checkWeather', [
     function (session, args, next) {
         var location = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.weather.absolute_location');
         var tempUnit = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.weather.temperature_unit');
+        var dateRequested = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.weather.date_range');
 
         if (!tempUnit) {
             // Default to C for now, we'll do something smarter later.
@@ -61,12 +63,18 @@ bot.dialog('checkWeather', [
             session.privateConversationData.temperatureUnit = tempUnit.resolution.value;
         }
 
+        if (dateRequested) {
+            console.log("got a date");
+            console.log(dateRequested);
+            session.privateConversationData.dateRequested = moment(dateRequested.resolution.date);
+        }
+
         if (!location) {
-            session.beginDialog('getLocation');            
+            session.beginDialog('getLocation');
         } else {
-            session.privateConversationData.location = location.entity;   
+            session.privateConversationData.location = location.entity;
             next();
-        }           
+        }
     },
     function (session, results, next) {
         var locationData = session.privateConversationData.locationData;
@@ -102,10 +110,25 @@ bot.dialog('checkWeather', [
         }
     },
     function (session, results, next) {
-
         if (session.dialogData.promptedToPickLocation) {
             session.privateConversationData.location = results.response.entity;
         }
+
+        next();
+    },
+    function (session, results, next) {
+
+        if (session.privateConversationData.dateRequested) {
+            let dateRequested = session.privateConversationData.dateRequested;
+            
+            if (!canGetWeatherForDate(dateRequested)) {
+                session.beginDialog('getDate');
+            } else {
+                next();
+            }
+        }        
+    },
+    function (session, results, next) {       
 
         location = session.privateConversationData.location;
         let locationData = session.privateConversationData.locationData[location];
@@ -142,6 +165,35 @@ bot.dialog('getLocation', [
     },
     function (session, results) {
         session.privateConversationData.location = results.response;
+        session.endDialog();
+    }
+]);
+
+
+/* getDate Dialog
+ * Prompts the user for a date to retrieve weather information.
+ * Date cannot be more than 10 days in the future.
+ */
+bot.dialog('getDate', [
+    function (session) {
+        builder.Prompts.time(session, "For what day would you like me to check the weather?")
+    },
+    function (session, results) {
+        if (results.response) {
+            let dateRequested = builder.EntityRecognizer.resolveTime([results.response]);
+
+            console.log("Got a date requested: " + moment(dateRequested).format());
+
+            if (!canGetWeatherForDate(moment(dateRequested))) {
+                console.log("************************************Replacing the dialog");
+                session.replaceDialog('getDate');
+            } else {
+                session.privateConversationData.dateRequested = moment(dateRequested);
+                next();
+            }
+        }
+    },
+    function (session, results) {
         session.endDialog();
     }
 ]);
@@ -213,4 +265,16 @@ function buildCurrentWeatherString(weatherData, tempUnit) {
     weatherString += temp + tempString;
 
     return weatherString;
+}
+
+function canGetWeatherForDate(dateRequestedMoment) {
+    let maxDate = moment().add(10, 'days');
+
+    console.log(dateRequestedMoment.format());
+
+    if (!dateRequestedMoment.isBefore(maxDate)) {
+        return false;
+    } else {
+        return true;
+    }
 }
