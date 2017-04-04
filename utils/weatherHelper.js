@@ -3,8 +3,11 @@
 var axios = require('axios');
 
 let baseUri = 'http://api.wunderground.com/api/';
+
 let conditionsUri = '/conditions/q/';
 let geoUri = '/geolookup/q/';
+let tenDayForecast = '/forecast10day/q/';
+
 let autoIP = "autoIp";
 let fileType = '.json';
 
@@ -104,7 +107,36 @@ module.exports = class WeatherHelper {
                 
                 return Promise.reject(error);
             });
-    }     
+    }
+
+    get10DayForecast(location) {
+        let url = baseUri + this.apiKey + conditionsUri + location + fileType;
+
+        console.log("Making request to wunderground: %s", url);
+
+        return axios.get(url)
+            .then(function (response) {
+                if (response.data.response.error) {
+                    console.error("Received an error during the request: ");
+                    console.error(response.data.response.error);
+                    return Promise.reject(response.data.response.error);
+                }
+
+                return response.data.forecast.txt_forecast;
+            })
+            .catch(function (error) {
+                if (error.response) {
+                    console.error("Request to wunderground failed with status code %s", error.response.status);
+                    console.error(error.response.data);
+                } else {
+                    console.error(error);
+                }
+
+                console.error(error.config);
+
+                return Promise.reject(error);
+            });
+    }
 }
 
 function createLocationStructureFromResponseLocation(location) {

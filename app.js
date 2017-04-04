@@ -185,7 +185,6 @@ bot.dialog('getDate', [
             console.log("Got a date requested: " + moment(dateRequested).format());
 
             if (!canGetWeatherForDate(moment(dateRequested))) {
-                console.log("************************************Replacing the dialog");
                 session.replaceDialog('getDate');
             } else {
                 session.privateConversationData.dateRequested = moment(dateRequested);
