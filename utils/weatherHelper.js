@@ -1,6 +1,7 @@
 "use strict";
 
 var axios = require('axios');
+var moment = require('moment');
 
 let baseUri = 'http://api.wunderground.com/api/';
 
@@ -116,13 +117,25 @@ module.exports = class WeatherHelper {
 
         return axios.get(url)
             .then(function (response) {
+
                 if (response.data.response.error) {
                     console.error("Received an error during the request: ");
                     console.error(response.data.response.error);
                     return Promise.reject(response.data.response.error);
                 }
 
-                return response.data.forecast.txt_forecast;
+                let data = response.data.forecast.txt_forecast.forecastday;
+
+                return data.map(function (entry) {
+                    let dateTime = moment().add(1, 'day').add(entry.period * 12, 'hours');
+
+                    return {
+                        'date': dateTime,
+                        'weatherImageUrl': entry.icon_url,
+                        'weatherText': entry.fcttext,
+                        'weatherTextMetric': entry.fcttext_metric
+                    }
+                });
             })
             .catch(function (error) {
                 if (error.response) {
