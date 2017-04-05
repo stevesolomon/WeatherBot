@@ -7,7 +7,7 @@ let baseUri = 'http://api.wunderground.com/api/';
 
 let conditionsUri = '/conditions/q/';
 let geoUri = '/geolookup/q/';
-let tenDayForecast = '/forecast10day/q/';
+let tenDayForecastUri = '/forecast10day/q/';
 
 let autoIP = "autoIp";
 let fileType = '.json';
@@ -111,7 +111,7 @@ module.exports = class WeatherHelper {
     }
 
     get10DayForecast(location) {
-        let url = baseUri + this.apiKey + conditionsUri + location + fileType;
+        let url = baseUri + this.apiKey + tenDayForecastUri + location + fileType;
 
         console.log("Making request to wunderground: %s", url);
 
@@ -127,10 +127,14 @@ module.exports = class WeatherHelper {
                 let data = response.data.forecast.txt_forecast.forecastday;
 
                 return data.map(function (entry) {
-                    let dateTime = moment().add(1, 'day').add(entry.period * 12, 'hours');
+
+                    // We get two results back for each day: one day-time forecast and one night-time forecast.
+                    // Let's convert the generic "periods", which are just monotonically increasing, into 
+                    // actual moment.js dates, at 9am and 9pm respectively.
+                    let dateTime = moment().startOf('day').add(6, 'hours').add(1, 'day').add(entry.period * 12, 'hours');
 
                     return {
-                        'date': dateTime,
+                        'observationTime': dateTime,
                         'weatherImageUrl': entry.icon_url,
                         'weatherText': entry.fcttext,
                         'weatherTextMetric': entry.fcttext_metric
