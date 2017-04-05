@@ -86,15 +86,7 @@ module.exports = class WeatherHelper {
                     return Promise.reject(response.data.response.error);
                 }
 
-                return {
-                    'location': response.data.current_observation.display_location.full,
-                    'tempc': response.data.current_observation.temp_c,
-                    'tempf': response.data.current_observation.temp_f,
-                    'weather': response.data.current_observation.weather,
-                    'weatherImageUrl': response.data.current_observation.icon_url,
-                    'observationTime': response.data.current_observation.observation_time,
-                    'observationUrl' : response.data.current_observation.ob_url
-                };
+                return createWeatherDataOutputFromConditionsQuery(response.data.current_observation);
             })
             .catch(function (error) {
                 if (error.response) {
@@ -126,20 +118,7 @@ module.exports = class WeatherHelper {
 
                 let data = response.data.forecast.txt_forecast.forecastday;
 
-                return data.map(function (entry) {
-
-                    // We get two results back for each day: one day-time forecast and one night-time forecast.
-                    // Let's convert the generic "periods", which are just monotonically increasing, into 
-                    // actual moment.js dates, at 9am and 9pm respectively.
-                    let dateTime = moment().startOf('day').add(6, 'hours').add(1, 'day').add(entry.period * 12, 'hours');
-
-                    return {
-                        'observationTime': dateTime,
-                        'weatherImageUrl': entry.icon_url,
-                        'weatherText': entry.fcttext,
-                        'weatherTextMetric': entry.fcttext_metric
-                    }
-                });
+                return createWeatherDataOutputFrom10DayQuery(response.data.forecast);
             })
             .catch(function (error) {
                 if (error.response) {
@@ -167,3 +146,37 @@ function createLocationStructureFromResponseLocation(location) {
         'keyName': keyName
     };
 };
+
+function createWeatherDataOutputFromConditionsQuery(weatherData) {
+
+    return {
+        'location': weatherData.display_location.full,
+        'tempc': weatherData.temp_c,
+        'tempf': weatherData.temp_f,
+        'weather': weatherData.weather,
+        'weatherImageUrl': weatherData.icon_url,
+        'observationTime': weatherData.observation_time,
+        'observationUrl': weatherData.ob_url
+    };
+};
+
+function createWeatherDataOutputFrom10DayQuery(weatherData) {
+
+    let data = weatherData.txt_forecast.forecastday;
+
+    return data.map(function (entry) {
+
+        // We get two results back for each day: one day-time forecast and one night-time forecast.
+        // Let's convert the generic "periods", which are just monotonically increasing, into 
+        // actual moment.js dates, at 9am and 9pm respectively.
+        let dateTime = moment().startOf('day').add(6, 'hours').add(1, 'day').add(entry.period * 12, 'hours');
+
+        return {
+            'observationTime': dateTime,
+            'weatherImageUrl': entry.icon_url,
+            'weatherText': entry.fcttext,
+            'weatherTextMetric': entry.fcttext_metric
+        }
+    });
+};
+
