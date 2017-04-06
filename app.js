@@ -64,7 +64,6 @@ bot.dialog('checkWeather', [
         }
 
         if (dateRequested) {
-            console.log("got a date");
             console.log(dateRequested);
             session.privateConversationData.dateRequested = moment(dateRequested.resolution.date);
         }
@@ -78,8 +77,6 @@ bot.dialog('checkWeather', [
     },
     function (session, results, next) {
         var locationData = session.privateConversationData.locationData;
-
-        console.log(locationData);
 
         if (!locationData) {
 
@@ -126,24 +123,45 @@ bot.dialog('checkWeather', [
             } else {
                 next();
             }
-        }        
+        } else {
+            next();
+        }     
     },
     function (session, results, next) {       
 
         location = session.privateConversationData.location;
         let locationData = session.privateConversationData.locationData[location];
+        let dateRequested = session.privateConversationData.dateRequested;
 
         session.send("Okay! I am going to check the weather in %s!", location);
 
-        weatherHelper.getCurrentConditions(locationData.zmw)
-            .then(function (weatherData) {
-                session.dialogData.weatherData = weatherData;
-                next();
-            })
-            .catch(function (error) {
-                handleErrorInWeatherSearch(session, error);
-                session.endConversation();
-            })
+        if (dateRequested) {
+
+            weatherHelper.get10DayForecast(locationData.zmw)
+                .then(function (weatherData) {
+
+                    let dateKey = moment(dateRequested).startOf('day').add(6, 'hours');
+
+                    session.dialogData.weatherData = weatherData.filter(function (data) { return data.observationTime.isSame(dateKey); })[0];
+                    next();
+                })
+                .catch(function (error) {
+                    handleErrorInWeatherSearch(session, error);
+                    session.endConversation();
+                });
+
+        } else {
+
+            weatherHelper.getCurrentConditions(locationData.zmw)
+                .then(function (weatherData) {
+                    session.dialogData.weatherData = weatherData;
+                    next();
+                })
+                .catch(function (error) {
+                    handleErrorInWeatherSearch(session, error);
+                    session.endConversation();
+                });
+        }
     },
     function (session, results) {
         var card = createWeatherCard(session);
@@ -216,6 +234,8 @@ function handleErrorInWeatherSearch(session, error) {
     } else {
         session.send('Hmmm, I seem to have been unable to check the weather right now. You may have to try again later. Sorry about that!');
     }
+
+    console.log(error);
 }
 
 function formatMultipleLocations(locations) {
@@ -235,12 +255,21 @@ function formatLocation(location) {
 function createWeatherCard(session) {
     let weatherData = session.dialogData.weatherData;
 
-    return new builder.ThumbnailCard(session)
-        .title('Weather for ' + weatherData.location)
-        .subtitle(weatherData.observationTime)
-        .text(buildCurrentWeatherString(weatherData, session.privateConversationData.temperatureUnit))
-        .buttons([builder.CardAction.openUrl(session, weatherData.observationUrl)])
-        .images([builder.CardImage.create(session, weatherData.weatherImageUrl)]);
+    // Check if we have fancy-formatted text already prepared.
+    if (weatherData.weatherText) {
+        return new builder.ThumbnailCard(session)
+            .title('Weather for ' + session.privateConversationData.location)
+            .subtitle(weatherData.observationTime.format('MMMM DD, YYYY'))
+            .text(weatherData.weatherText)
+            .images([builder.CardImage.create(session, weatherData.weatherImageUrl)]);
+    } else {
+        return new builder.ThumbnailCard(session)
+            .title('Weather for ' + weatherData.location)
+            .subtitle(weatherData.observationTime)
+            .text(buildCurrentWeatherString(weatherData, session.privateConversationData.temperatureUnit))
+            .buttons([builder.CardAction.openUrl(session, weatherData.observationUrl)])
+            .images([builder.CardImage.create(session, weatherData.weatherImageUrl)]);
+    }
 }
 
 function buildCurrentWeatherString(weatherData, tempUnit) {
@@ -269,7 +298,9 @@ function buildCurrentWeatherString(weatherData, tempUnit) {
 function canGetWeatherForDate(dateRequestedMoment) {
     let maxDate = moment().add(10, 'days');
 
-    console.log(dateRequestedMoment.format());
+    if (!moment.isMoment(dateRequestedMoment)) {
+        dateRequestedMoment = moment(dateRequestedMoment);
+    }
 
     if (!dateRequestedMoment.isBefore(maxDate)) {
         return false;

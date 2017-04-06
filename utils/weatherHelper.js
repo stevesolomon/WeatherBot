@@ -168,7 +168,7 @@ function createWeatherDataOutputFrom10DayQuery(weatherData) {
 
         // We get two results back for each day: one day-time forecast and one night-time forecast.
         // Let's convert the generic "periods", which are just monotonically increasing, into 
-        // actual moment.js dates, at 9am and 9pm respectively.
+        // actual moment.js dates, at 6am and 6pm respectively.
         let dateTime = moment().startOf('day').add(6, 'hours').add(1, 'day').add(entry.period * 12, 'hours');
 
         return {
