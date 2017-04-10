@@ -9,6 +9,8 @@ var WeatherHelper = require('./utils/weatherHelper.js');
 let CELSIUS = "celsius";
 let FAHRENHEIT = "fahrenheit";
 
+let DATE_TOO_FAR_IN_FUTURE = "Sorry, I can only get the weather for up to 10 days in the future.";
+
 var wundergroundApiKey; 
 var luisCortanaUriPart;
 
@@ -119,7 +121,7 @@ bot.dialog('checkWeather', [
             let dateRequested = session.privateConversationData.dateRequested;
             
             if (!canGetWeatherForDate(dateRequested)) {
-                session.beginDialog('getDate');
+                session.beginDialog('getDate', { 'initialMessage': DATE_TOO_FAR_IN_FUTURE });
             } else {
                 next();
             }
@@ -193,7 +195,12 @@ bot.dialog('getLocation', [
  * Date cannot be more than 10 days in the future.
  */
 bot.dialog('getDate', [
-    function (session) {
+    function (session, args) {
+
+        if (args.initialMessage) {
+            session.send(args.initialMessage);
+        }
+
         builder.Prompts.time(session, "For what day would you like me to check the weather?")
     },
     function (session, results) {
@@ -203,15 +210,12 @@ bot.dialog('getDate', [
             console.log("Got a date requested: " + moment(dateRequested).format());
 
             if (!canGetWeatherForDate(moment(dateRequested))) {
-                session.replaceDialog('getDate');
+                session.replaceDialog('getDate', { 'initialMessage': DATE_TOO_FAR_IN_FUTURE });
             } else {
                 session.privateConversationData.dateRequested = moment(dateRequested);
-                next();
+                session.endDialog();
             }
         }
-    },
-    function (session, results) {
-        session.endDialog();
     }
 ]);
 
