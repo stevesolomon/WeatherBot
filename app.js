@@ -257,10 +257,14 @@ function createWeatherCard(session) {
 
     // Check if we have fancy-formatted text already prepared.
     if (weatherData.weatherText) {
+
+        let weatherText = session.privateConversationData.temperatureUnit === FAHRENHEIT ?
+            weatherData.weatherText : weatherData.weatherTextMetric;
+
         return new builder.ThumbnailCard(session)
             .title('Weather for ' + session.privateConversationData.location)
             .subtitle(weatherData.observationTime.format('MMMM DD, YYYY'))
-            .text(weatherData.weatherText)
+            .text(weatherText)
             .images([builder.CardImage.create(session, weatherData.weatherImageUrl)]);
     } else {
         return new builder.ThumbnailCard(session)
